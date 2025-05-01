@@ -1,0 +1,4 @@
+# This file lists the dependencies for the project.
+
+python-telegram-bot==13.7
+sqlite3
