@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 
 from bot.utils.db import SessionLocal
 from bot.models.user import User
-from bot.handlers.course_handlers import add_course_start, my_courses
+from bot.handlers.course_handlers import add_course_start, my_courses, create_tag_start
 
 def get_user_role(telegram_id: int) -> str:
     """Devuelve el rol del usuario ('admin', 'professor' o 'student')."""
@@ -23,11 +23,13 @@ def build_inline_menu(role: str) -> InlineKeyboardMarkup:
             [InlineKeyboardButton("Añadir curso",     callback_data="add_course"),
              InlineKeyboardButton("Añadir tag a curso", callback_data="add_tag")],
             [InlineKeyboardButton("Mis cursos",       callback_data="my_courses")],
+            [InlineKeyboardButton("Crear etiqueta", callback_data="create_tag")],
         ],
         "professor": [
             [InlineKeyboardButton("Añadir curso",     callback_data="add_course"),
              InlineKeyboardButton("Añadir tag a curso", callback_data="add_tag")],
             [InlineKeyboardButton("Mis cursos",       callback_data="my_courses")],
+            [InlineKeyboardButton("Crear etiqueta", callback_data="create_tag")],
         ],
         "student": [
             [InlineKeyboardButton("Seleccionar tags",   callback_data="select_tags")],
@@ -59,6 +61,8 @@ async def menu_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if data == "add_course":
         print(f"[MENU CALLBACK] Usuario {user.id} pulsó Añadir curso")
         # Delegamos al flujo de conversación de add_course
+        # await context.bot.send_message(chat_id=query.message.chat_id, text="/addcourse")
+        # return
         return await add_course_start(update, context)
 
     if data == "my_courses":
@@ -66,6 +70,13 @@ async def menu_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         # Delegamos al handler que muestra los cursos del profesor
         return await my_courses(update, context)
 
+    if data == "create_tag":
+        print(f"[MENU CALLBACK] Usuario {user.id} pulsó Crear etiqueta")
+        # Aquí iría el handler para crear etiquetas
+        # await context.bot.send_message(chat_id=query.message.chat_id, text="/createtag")
+        # return
+        return await create_tag_start(update, context)
+    
     # Para cualquier otro callback, lo mostramos directamente
     print(f"[MENU CALLBACK] Usuario {user.id} pulsó: {data}")
     return await query.edit_message_text(f"Has pulsado: {data}")

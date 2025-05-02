@@ -11,6 +11,10 @@ from .course_handlers import (
     add_course_desc,
     add_course_cancel,
     my_courses,
+    create_tag_start,
+    create_tag_name,
+    create_tag_cancel,
+    ASK_TAG_NAME,
     ASK_NAME, ASK_EMOJI, ASK_DESC
 )
 from .student_handlers  import select_tags, list_optatives
@@ -33,7 +37,19 @@ def register_handlers(app):
         allow_reentry=True
     ))
     # app.add_handler(CommandHandler("addtag",        add_tag))
-    app.add_handler(CommandHandler("mycourses",     my_courses))  
+    app.add_handler(CommandHandler("mycourses",     my_courses))
+    
+    # ConversationHandler para crear etiquetas
+    app.add_handler( ConversationHandler(
+        entry_points=[CommandHandler("createtag", create_tag_start)],
+        states={
+            ASK_TAG_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, create_tag_name)],
+        },
+        fallbacks=[CommandHandler("cancel", create_tag_cancel)],
+        name="createtag_flow",
+        allow_reentry=True
+    ))
+     
     app.add_handler(CommandHandler("selecttags",    select_tags))
     app.add_handler(CommandHandler("listoptativas", list_optatives))
     app.add_handler(CommandHandler("help",  help_handler))

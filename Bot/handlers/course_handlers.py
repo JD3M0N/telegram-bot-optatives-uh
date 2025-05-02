@@ -10,6 +10,11 @@ from bot.utils.decorators import professor_only
 from bot.utils.db import SessionLocal
 from bot.models.course import Course
 from bot.models.user import User
+from bot.models.tag import Tag
+import string
+import unicodedata
+
+# region Cursos Opativos
 
 # Estados del ConversationHandler
 ASK_NAME, ASK_EMOJI, ASK_DESC = range(3)
@@ -90,3 +95,77 @@ async def my_courses(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text   = "📚 *Tus cursos:*\n" + "\n".join(lineas)
 
     return await update.effective_message.reply_text(text, parse_mode="Markdown")
+
+# endregion
+
+# region Etiquetas
+
+# Estado del ConversationHandler
+ASK_TAG_NAME = 0
+
+@professor_only
+async def create_tag_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Inicio de /createtag o botón ‘createtag’."""
+    user = update.effective_user
+    print(f"[CREATE TAG] Inicio por {user.id} (@{user.username})")
+    await update.effective_message.reply_text(
+        "✏️ Escriba el nombre de la etiqueta que desea crear:"
+    )
+    return ASK_TAG_NAME
+
+async def create_tag_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Recibe el nombre, lo normaliza, verifica y crea la etiqueta."""
+    raw = update.effective_message.text.strip()
+    # Normalizar: minúsculas y quitar puntuación
+    # 1) Pasar a minúsculas
+    lower = raw.lower()
+
+    # 2) Descomponer Unicode (NFD) y quitar marcas de acento (Mn)
+    decomposed = unicodedata.normalize('NFD', lower)
+    no_accents = ''.join(
+        ch for ch in decomposed
+        if unicodedata.category(ch) != 'Mn'
+    )
+
+    # 3) Quitar signos de puntuación
+    normalized = ''.join(
+        ch for ch in no_accents
+        if ch not in string.punctuation
+    )
+    
+    print(f"[CREATE TAG] Nombre recibido «{raw}», normalizado «{normalized}»")
+
+    db = SessionLocal()
+    try:
+        exists = db.query(Tag).filter_by(name=normalized).first()
+        if exists:
+            print(f"[CREATE TAG] '{normalized}' ya existe (ID {exists.id})")
+            await update.effective_message.reply_text(
+                f"⚠️ La etiqueta «{normalized}» ya existe."
+            )
+        else:
+            tag = Tag(name=normalized)
+            db.add(tag)
+            db.commit()
+            print(f"[CREATE TAG] Etiqueta creada «{normalized}» (ID {tag.id})")
+            await update.effective_message.reply_text(
+                f"✅ Etiqueta «{normalized}» creada correctamente."
+            )
+    except Exception as e:
+        print(f"[CREATE TAG] Error: {e}")
+        await update.effective_message.reply_text(
+            "❌ Hubo un error al crear la etiqueta."
+        )
+    finally:
+        db.close()
+
+    return ConversationHandler.END
+
+async def create_tag_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Cancela el flujo si se envía /cancel."""
+    user = update.effective_user
+    print(f"[CREATE TAG] Cancelado por {user.id} (@{user.username})")
+    await update.effective_message.reply_text("⚠️ Operación cancelada.")
+    return ConversationHandler.END
+        
+# endregion
