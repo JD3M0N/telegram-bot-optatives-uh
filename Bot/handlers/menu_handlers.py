@@ -5,6 +5,7 @@ from telegram.ext import ContextTypes
 from bot.utils.db import SessionLocal
 from bot.models.user import User
 from bot.handlers.course_handlers import add_course_start, my_courses, create_tag_start, add_tag_start
+from bot.handlers.student_handlers import list_optatives
 
 def get_user_role(telegram_id: int) -> str:
     """Devuelve el rol del usuario ('admin', 'professor' o 'student')."""
@@ -69,6 +70,10 @@ async def menu_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if data == "add_tag":
         print(f"[MENU CALLBACK] {user.id} pulsó Añadir etiqueta a curso → arrancando flujo")
         return await add_tag_start(update, context)
+    
+    if data == "list_optatives":
+        print(f"[MENU CALLBACK] {user.id} pulsó Lista optativas")
+        return await list_optatives(update, context)
 
     # cualquier otro callback…
     return await query.edit_message_text(f"Has pulsado: {data}")

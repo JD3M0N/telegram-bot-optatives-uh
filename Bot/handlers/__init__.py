@@ -24,7 +24,7 @@ from .course_handlers import (
     ASK_TAG_NAME,
     ASK_NAME, ASK_EMOJI, ASK_DESC
 )
-from .student_handlers  import select_tags, list_optatives
+from .student_handlers import select_tags, list_optatives, course_info_handler
 from .menu_handlers     import menu_handler, menu_callback_handler
 from .help_handlers     import help_handler
 from .start_handlers    import start_handler
@@ -81,10 +81,17 @@ def register_handlers(app):
     ))
     
     app.add_handler(CommandHandler("selecttags",    select_tags))
-    app.add_handler(CommandHandler("listoptativas", list_optatives))
     app.add_handler(CommandHandler("help",  help_handler))
     app.add_handler(CommandHandler("menu",          menu_handler))
     app.add_handler(CommandHandler("start",         start_handler))
+    
+    # Comando /listoptativas para estudiantes
+    app.add_handler(CommandHandler("listoptativas", list_optatives))
+
+    # Callback para cuando pinchan “ℹ️ Info”
+    app.add_handler(
+        CallbackQueryHandler(course_info_handler, pattern=r"^info_\d+$")
+    )
 
     # Callbacks de InlineKeyboard
     app.add_handler(CallbackQueryHandler(menu_callback_handler))
