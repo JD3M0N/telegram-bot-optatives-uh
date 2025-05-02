@@ -47,36 +47,22 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Elige una opción:", reply_markup=markup)
 
 async def menu_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Procesa los callbacks del menú inline:
-      - add_course    → arranca el ConversationHandler de añadir curso
-      - my_courses    → lista los cursos del profesor
-      - cualquier otro → muestra el callback_data
-    """
     query = update.callback_query
     data  = query.data
     user  = query.from_user
-    await query.answer()  # cierra el spinner del botón
+    await query.answer()
 
     if data == "add_course":
-        print(f"[MENU CALLBACK] Usuario {user.id} pulsó Añadir curso")
-        # Delegamos al flujo de conversación de add_course
-        # await context.bot.send_message(chat_id=query.message.chat_id, text="/addcourse")
-        # return
+        print(f"[MENU CALLBACK] {user.id} pulsó Añadir curso → arrancando flujo")
         return await add_course_start(update, context)
 
     if data == "my_courses":
-        print(f"[MENU CALLBACK] Usuario {user.id} pulsó Mis cursos")
-        # Delegamos al handler que muestra los cursos del profesor
+        print(f"[MENU CALLBACK] {user.id} pulsó Mis cursos")
         return await my_courses(update, context)
 
     if data == "create_tag":
-        print(f"[MENU CALLBACK] Usuario {user.id} pulsó Crear etiqueta")
-        # Aquí iría el handler para crear etiquetas
-        # await context.bot.send_message(chat_id=query.message.chat_id, text="/createtag")
-        # return
+        print(f"[MENU CALLBACK] {user.id} pulsó Crear etiqueta → arrancando flujo")
         return await create_tag_start(update, context)
-    
-    # Para cualquier otro callback, lo mostramos directamente
-    print(f"[MENU CALLBACK] Usuario {user.id} pulsó: {data}")
+
+    # cualquier otro callback…
     return await query.edit_message_text(f"Has pulsado: {data}")

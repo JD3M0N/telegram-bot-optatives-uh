@@ -26,7 +26,10 @@ def register_handlers(app):
     # Comandos de texto
     app.add_handler(CommandHandler("promote",       promote_professor))
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("addcourse", add_course_start)],
+    entry_points=[
+        CommandHandler("addcourse", add_course_start),
+        CallbackQueryHandler(add_course_start, pattern="^add_course$")
+    ],
         states={
             ASK_NAME:  [MessageHandler(filters.TEXT & ~filters.COMMAND, add_course_name)],
             ASK_EMOJI: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_course_emoji)],
@@ -41,7 +44,10 @@ def register_handlers(app):
     
     # ConversationHandler para crear etiquetas
     app.add_handler( ConversationHandler(
-        entry_points=[CommandHandler("createtag", create_tag_start)],
+    entry_points=[
+        CommandHandler("createtag", create_tag_start),
+        CallbackQueryHandler(create_tag_start, pattern="^create_tag$")
+    ],
         states={
             ASK_TAG_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, create_tag_name)],
         },
