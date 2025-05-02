@@ -18,6 +18,7 @@ from .course_handlers import (
     add_tag_tag_selected,
     add_tag_course_selected,
     add_tag_cancel,
+    course_info,
     ASK_COURSE_ID,
     ASK_TAG_ID,
     ASK_TAG_NAME,
@@ -47,6 +48,8 @@ def register_handlers(app):
     ))
     # app.add_handler(CommandHandler("addtag",        add_tag))
     app.add_handler(CommandHandler("mycourses",     my_courses))
+    # Capturamos cualquier mensaje que sea exactamente /info_<dígitos>
+    app.add_handler(MessageHandler(filters.Regex(r"^/info_\d+$"), course_info))
     
     # ConversationHandler para crear etiquetas
     app.add_handler( ConversationHandler(

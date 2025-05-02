@@ -93,10 +93,42 @@ async def my_courses(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not cursos:
         text = "⚠️ No tienes cursos registrados."
     else:
-        lineas = [f"{c.emoji or ''} {c.name} (ID: {c.id})" for c in cursos]
-        text   = "📚 *Tus cursos:*\n" + "\n".join(lineas)
+       # Ahora listamos cada curso junto al comando para pedir su info
+       lineas = [
+           f"{c.emoji or ''} {c.name} — `/info_{c.id}`"
+           for c in cursos
+       ]
+       text   = "📚 *Tus cursos:*\n" + "\n".join(lineas)
 
     return await update.effective_message.reply_text(text, parse_mode="Markdown")
+
+@professor_only
+async def course_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra nombre, descripción y etiquetas del curso cuyo ID viene en /info_<id>."""
+    text_msg = update.message.text or ""
+    m = re.match(r"^/info_(\d+)$", text_msg)
+    if not m:
+        return  # si no coincide, no hacemos nada
+
+    course_id = int(m.group(1))
+    db = SessionLocal()
+    try:
+        prof = db.query(User).filter_by(telegram_id=update.effective_user.id).first()
+        course = db.query(Course).filter_by(id=course_id, professor_id=prof.id).first()
+        if not course:
+            await update.message.reply_text("⚠️ Curso no encontrado o sin permisos.")
+            return
+
+        tags = [t.name for t in course.tags]
+        tags_text = ", ".join(tags) if tags else "—"
+        info = (
+            f"*Nombre:* {course.emoji or ''} {course.name}\n"
+            f"*Descripción:* {course.description}\n"
+            f"*Etiquetas:* {tags_text}"
+        )
+        await update.message.reply_text(info, parse_mode="Markdown")
+    finally:
+        db.close()
 
 # endregion
 
