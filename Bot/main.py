@@ -9,6 +9,16 @@ from bot.handlers import register_handlers
 # Importa el nuevo builder
 from telegram.ext import ApplicationBuilder
 
+import warnings
+from telegram.warnings import PTBUserWarning
+
+# Suprime todos los PTBUserWarning relacionados con CallbackQueryHandler
+warnings.filterwarnings(
+    "ignore",
+    message=r".*CallbackQueryHandler.*",
+    category=PTBUserWarning
+)
+
 # 1) Carga .env
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
