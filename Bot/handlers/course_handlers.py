@@ -70,3 +70,23 @@ async def add_course_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"[ADD COURSE] Cancelado por {update.effective_user.id}")
     await update.message.reply_text("⚠️ Operación cancelada.")
     return ConversationHandler.END
+
+async def my_courses(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    print(f"[MY COURSES] Usuario {user.id} (@{user.username}) ejecuta /mycourses")
+    db = SessionLocal()
+    try:
+        # localiza al profesor en la BD
+        prof = db.query(User).filter_by(telegram_id=user.id).first()
+        # obtiene sus cursos
+        cursos = db.query(Course).filter_by(professor_id=prof.id).all() if prof else []
+    finally:
+        db.close()
+
+    if not cursos:
+        text = "⚠️ No tienes cursos registrados."
+    else:
+        lineas = [f"{c.emoji or ''} {c.name} (ID: {c.id})" for c in cursos]
+        text   = "📚 *Tus cursos:*\n" + "\n".join(lineas)
+
+    return await update.message.reply_text(text, parse_mode="Markdown")

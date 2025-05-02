@@ -10,6 +10,7 @@ from .course_handlers import (
     add_course_emoji,
     add_course_desc,
     add_course_cancel,
+    my_courses,
     ASK_NAME, ASK_EMOJI, ASK_DESC
 )
 from .student_handlers  import select_tags, list_optatives
@@ -31,6 +32,7 @@ def register_handlers(app):
         allow_reentry=True
     ))
     # app.add_handler(CommandHandler("addtag",        add_tag))
+    app.add_handler(CommandHandler("mycourses",     my_courses))  
     app.add_handler(CommandHandler("selecttags",    select_tags))
     app.add_handler(CommandHandler("listoptativas", list_optatives))
     app.add_handler(CommandHandler("help",  help_handler))
