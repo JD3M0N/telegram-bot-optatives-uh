@@ -16,6 +16,7 @@ from .course_handlers import (
 from .student_handlers  import select_tags, list_optatives
 from .menu_handlers     import menu_handler, menu_callback_handler
 from .help_handlers     import help_handler
+from .start_handlers    import start_handler
 
 def register_handlers(app):
     # Comandos de texto
@@ -37,6 +38,7 @@ def register_handlers(app):
     app.add_handler(CommandHandler("listoptativas", list_optatives))
     app.add_handler(CommandHandler("help",  help_handler))
     app.add_handler(CommandHandler("menu",          menu_handler))
+    app.add_handler(CommandHandler("start",         start_handler))
 
     # Callbacks de InlineKeyboard
     app.add_handler(CallbackQueryHandler(menu_callback_handler, pattern="^menu$"))

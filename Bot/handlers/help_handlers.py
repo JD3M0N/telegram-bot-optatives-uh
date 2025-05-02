@@ -13,6 +13,7 @@ async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  /promote      – Promover estudiante a profesor\n\n"
         "🎓 professor:\n"
         "  /addcourse    – Añadir un nuevo curso\n"
+        " /mycourses     – Ver lista de cursos\n"
         "  /addtag       – Añadir etiqueta a un curso\n\n"
         "👤 student:\n"
         "  /selecttags   – Seleccionar tus tags de interés\n"
