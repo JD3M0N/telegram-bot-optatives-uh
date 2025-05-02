@@ -1,61 +1,72 @@
-# bot/handlers/course_handlers.py
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import (
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    CommandHandler,
+    filters
+)
 from bot.utils.decorators import professor_only
 from bot.utils.db import SessionLocal
 from bot.models.course import Course
-from bot.models.tag import Tag
+from bot.models.user import User
+
+# Estados del ConversationHandler
+ASK_NAME, ASK_EMOJI, ASK_DESC = range(3)
 
 @professor_only
-async def add_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    print(f"[PROFESSOR] Usuario {user.id} (@{user.username}) ejecuta /addcourse con args={context.args}")
-    if not context.args:
-        print("No se proporcionó nombre de curso.")
-        return await update.message.reply_text("Uso: /addcourse <nombre del curso>")
-    name = " ".join(context.args)
+async def add_course_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"[ADD COURSE] Inicio por {update.effective_user.id}")
+    await update.message.reply_text("✏️ Por favor, escribe el *nombre* del nuevo curso:", parse_mode="Markdown")
+    return ASK_NAME
+
+async def add_course_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    name = update.message.text.strip()
+    context.user_data["new_course_name"] = name
+    print(f"[ADD COURSE] Nombre recibido: {name}")
+    await update.message.reply_text("🎨 Ahora envía el *emoji* que representará al curso:", parse_mode="Markdown")
+    return ASK_EMOJI
+
+async def add_course_emoji(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    emoji = update.message.text.strip()
+    context.user_data["new_course_emoji"] = emoji
+    print(f"[ADD COURSE] Emoji recibido: {emoji}")
+    await update.message.reply_text("📝 Finalmente, escribe la *descripción* del curso:", parse_mode="Markdown")
+    return ASK_DESC
+
+async def add_course_desc(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    desc = update.message.text.strip()
+    name  = context.user_data["new_course_name"]
+    emoji = context.user_data["new_course_emoji"]
+    print(f"[ADD COURSE] Descripción recibida: {desc}")
+
     db = SessionLocal()
     try:
-        course = Course(name=name)
+        # localiza al profesor en la BD por telegram_id
+        prof = db.query(User).filter_by(telegram_id=update.effective_user.id).first()
+        course = Course(
+            name=name,
+            emoji=emoji,
+            description=desc,
+            professor_id=prof.id
+        )
         db.add(course)
         db.commit()
-        print(f"Curso '{name}' añadido con ID {course.id}.")
-        await update.message.reply_text(f"✅ Curso '{name}' añadido.")
+        print(f"[ADD COURSE] Curso creado: {emoji} {name} (ID {course.id}) por prof_id={prof.id}")
+        await update.message.reply_text(
+            f"✅ Curso *{emoji} {name}* añadido correctamente.\n"
+            f"Descripción: {desc}",
+            parse_mode="Markdown"
+        )
     except Exception as e:
-        print(f"Error en add_course: {e}")
-        await update.message.reply_text("❌ Error al añadir curso.")
+        print(f"[ADD COURSE] Error al guardar en BD: {e}")
+        await update.message.reply_text("❌ Hubo un error al crear el curso.")
     finally:
         db.close()
 
-@professor_only
-async def add_tag(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    print(f"[PROFESSOR] Usuario {user.id} (@{user.username}) ejecuta /addtag con args={context.args}")
-    if len(context.args) < 2:
-        print("No se proporcionó curso o etiqueta.")
-        return await update.message.reply_text("Uso: /addtag <curso_id> <nombre de etiqueta>")
-    try:
-        course_id = int(context.args[0])
-    except ValueError:
-        print("ID de curso inválido.")
-        return await update.message.reply_text("El ID de curso debe ser un número.")
-    tag_name = " ".join(context.args[1:])
-    db = SessionLocal()
-    try:
-        course = db.get(Course, course_id)
-        if not course:
-            print(f"Curso con ID {course_id} no encontrado.")
-            return await update.message.reply_text(f"No existe un curso con ID {course_id}")
-        tag = db.query(Tag).filter_by(name=tag_name).first()
-        if not tag:
-            tag = Tag(name=tag_name)
-        course.tags.append(tag)
-        db.add(tag)
-        db.commit()
-        print(f"Etiqueta '{tag_name}' añadida al curso ID {course_id}.")
-        await update.message.reply_text(f"✅ Etiqueta '{tag_name}' añadida al curso.")
-    except Exception as e:
-        print(f"Error en add_tag: {e}")
-        await update.message.reply_text("❌ Error al añadir etiqueta.")
-    finally:
-        db.close()
+    return ConversationHandler.END
+
+async def add_course_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"[ADD COURSE] Cancelado por {update.effective_user.id}")
+    await update.message.reply_text("⚠️ Operación cancelada.")
+    return ConversationHandler.END

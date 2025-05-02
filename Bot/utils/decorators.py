@@ -34,3 +34,19 @@ def professor_only(func):
             db.close()
         return func(update, context, *args, **kwargs)
     return wrapper
+
+# Decorador que permite a profesores O admins
+# def professor_or_admin(func):
+#     @wraps(func)
+#     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+#         tid = update.effective_user.id
+#         db = SessionLocal()
+#         try:
+#             user = db.query(User).filter_by(telegram_id=tid).first()
+#             if not user or user.role not in (RoleEnum.professor, RoleEnum.admin):
+#                 await update.message.reply_text("🚫 No tienes permiso para añadir cursos.")
+#                 return ConversationHandler.END
+#         finally:
+#             db.close()
+#         return await func(update, context, *args, **kwargs)
+#     return wrapper
