@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Enum
 from sqlalchemy.orm  import relationship
 from bot.utils.db    import Base
 import enum
+from bot.models.tag import user_tag  
 
 class RoleEnum(enum.Enum):
     admin     = "admin"
@@ -11,14 +12,12 @@ class RoleEnum(enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
-
     id          = Column(Integer, primary_key=True, index=True)
     telegram_id = Column(Integer, unique=True, nullable=False)
     username    = Column(String, nullable=True)
     role        = Column(Enum(RoleEnum), default=RoleEnum.student, nullable=False)
 
-    # ← Añade esto para que Course.professor ↔ User.courses funcione
+    # relaciones existentes…
     courses = relationship("Course", back_populates="professor")
-
-    # Si también usas reviews:
-    # reviews = relationship("Review", back_populates="user")
+    # nueva relación many-to-many con Tag
+    tags    = relationship("Tag", secondary=user_tag, back_populates="users")
