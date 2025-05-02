@@ -14,6 +14,12 @@ from .course_handlers import (
     create_tag_start,
     create_tag_name,
     create_tag_cancel,
+    add_tag_start,
+    add_tag_tag_selected,
+    add_tag_course_selected,
+    add_tag_cancel,
+    ASK_COURSE_ID,
+    ASK_TAG_ID,
     ASK_TAG_NAME,
     ASK_NAME, ASK_EMOJI, ASK_DESC
 )
@@ -55,7 +61,22 @@ def register_handlers(app):
         name="createtag_flow",
         allow_reentry=True
     ))
-     
+    
+    # ConversationHandler para añadir etiquetas a cursos
+    app.add_handler( ConversationHandler(
+        entry_points=[
+            CommandHandler("addtag", add_tag_start),
+            CallbackQueryHandler(add_tag_start, pattern="^add_tag$")
+        ],
+        states={
+            ASK_COURSE_ID: [CallbackQueryHandler(add_tag_course_selected, pattern="^select_course_\\d+$")],
+            ASK_TAG_ID:    [CallbackQueryHandler(add_tag_tag_selected,  pattern="^select_tag_\\d+$")],
+        },
+        fallbacks=[CommandHandler("cancel", add_tag_cancel)],
+        name="addtag_flow",
+        allow_reentry=True
+    ))
+    
     app.add_handler(CommandHandler("selecttags",    select_tags))
     app.add_handler(CommandHandler("listoptativas", list_optatives))
     app.add_handler(CommandHandler("help",  help_handler))

@@ -1,4 +1,5 @@
 from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
@@ -13,6 +14,7 @@ from bot.models.user import User
 from bot.models.tag import Tag
 import string
 import unicodedata
+import re
 
 # region Cursos Opativos
 
@@ -168,4 +170,102 @@ async def create_tag_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text("⚠️ Operación cancelada.")
     return ConversationHandler.END
         
+        
+
+# Estados del ConversationHandler para /addtag
+ASK_COURSE_ID, ASK_TAG_ID = range(2)
+
+@professor_only
+async def add_tag_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    print(f"[ADD TAG] Inicio por {user.id} (@{user.username})")
+    db = SessionLocal()
+    try:
+        prof = db.query(User).filter_by(telegram_id=user.id).first()
+        cursos = db.query(Course).filter_by(professor_id=prof.id).all() if prof else []
+    finally:
+        db.close()
+
+    if not cursos:
+        await update.effective_message.reply_text("⚠️ No tienes cursos registrados.")
+        return ConversationHandler.END
+
+    buttons = [
+        [InlineKeyboardButton(f"{c.emoji or ''} {c.name}", callback_data=f"select_course_{c.id}")]
+        for c in cursos
+    ]
+    markup = InlineKeyboardMarkup(buttons)
+    await update.effective_message.reply_text(
+        "📚 Selecciona el curso al que deseas añadir una etiqueta:",
+        reply_markup=markup
+    )
+    return ASK_COURSE_ID
+
+async def add_tag_course_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    course_id = int(re.match(r"select_course_(\d+)", query.data).group(1))
+    context.user_data["add_tag_course_id"] = course_id
+
+    # Cargamos todas las etiquetas existentes
+    db = SessionLocal()
+    try:
+        tags = db.query(Tag).all()
+    finally:
+        db.close()
+
+    if not tags:
+        return await query.edit_message_text(
+            "⚠️ No hay etiquetas disponibles. Crea primero una con /createtag."
+        )
+
+    buttons = [
+        [InlineKeyboardButton(t.name, callback_data=f"select_tag_{t.id}")]
+        for t in tags
+    ]
+    markup = InlineKeyboardMarkup(buttons)
+       # 1) editamos el mensaje
+    await query.edit_message_text(
+        "🔖 Selecciona la etiqueta a añadir:",
+        reply_markup=markup
+    )
+    # 2) indicamos al ConversationHandler que pase al siguiente estado
+    return ASK_TAG_ID
+
+
+async def add_tag_tag_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    tag_id    = int(re.match(r"select_tag_(\d+)", query.data).group(1))
+    course_id = context.user_data.get("add_tag_course_id")
+
+    db = SessionLocal()
+    try:
+        course = db.query(Course).get(course_id)
+        tag    = db.query(Tag).get(tag_id)
+        if tag in course.tags:
+            texto = f"⚠️ El curso ya tiene la etiqueta «{tag.name}»."
+        else:
+            course.tags.append(tag)
+            db.commit()
+            print(f"[ADD TAG] Etiqueta «{tag.name}» añadida al curso «{course.name}» (ID {course.id})")
+            texto = f"✅ Etiqueta «{tag.name}» añadida al curso «{course.name}»."
+    except Exception as e:
+        print(f"[ADD TAG] Error: {e}")
+        texto = "❌ Ocurrió un error al añadir la etiqueta."
+    finally:
+        db.close()
+
+
+    # 1) editamos el mensaje de confirmación
+    await query.edit_message_text(texto)
+    # 2) terminamos la conversación
+    return ConversationHandler.END
+
+async def add_tag_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    print(f"[ADD TAG] Cancelado por {user.id} (@{user.username})")
+    await update.effective_message.reply_text("⚠️ Operación cancelada.")
+    return ConversationHandler.END
+
 # endregion
