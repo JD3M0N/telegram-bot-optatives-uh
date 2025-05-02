@@ -89,4 +89,4 @@ async def my_courses(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lineas = [f"{c.emoji or ''} {c.name} (ID: {c.id})" for c in cursos]
         text   = "📚 *Tus cursos:*\n" + "\n".join(lineas)
 
-    return await update.message.reply_text(text, parse_mode="Markdown")
+    return await update.effective_message.reply_text(text, parse_mode="Markdown")

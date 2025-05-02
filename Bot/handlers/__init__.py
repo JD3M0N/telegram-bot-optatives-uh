@@ -41,4 +41,4 @@ def register_handlers(app):
     app.add_handler(CommandHandler("start",         start_handler))
 
     # Callbacks de InlineKeyboard
-    app.add_handler(CallbackQueryHandler(menu_callback_handler, pattern="^menu$"))
+    app.add_handler(CallbackQueryHandler(menu_callback_handler))
