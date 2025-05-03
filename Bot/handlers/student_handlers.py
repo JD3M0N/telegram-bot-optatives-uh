@@ -131,7 +131,7 @@ async def toggle_tag(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = db.query(User).filter_by(telegram_id=tid).first()
         tag  = db.query(Tag).get(tag_id)
         if not user or not tag:
-            return await query.reply_text("❌ Usuario o etiqueta no encontrada.")
+            return await query.message.reply_text("❌ Usuario o etiqueta no encontrada.")
 
         if tag in user.tags:
             user.tags.remove(tag)
