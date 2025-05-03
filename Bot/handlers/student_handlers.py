@@ -158,3 +158,50 @@ async def toggle_tag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     # 2) Enviamos un pequeño mensaje de confirmación
     await query.message.reply_text(confirmation)
+    
+async def recommend_optatives(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ /recomend — Recomienda hasta 10 optativas según tus tags """
+    tid = update.effective_user.id
+    db  = SessionLocal()
+    try:
+        user = db.query(User).filter_by(telegram_id=tid).first()
+        if not user:
+            return await update.message.reply_text(
+                "🚫 No estás registrado. Ejecuta primero /start."
+            )
+
+        # Tags seleccionadas por el estudiante
+        selected_tag_ids = {t.id for t in user.tags}
+        if not selected_tag_ids:
+            return await update.message.reply_text(
+                "⚠️ No tienes etiquetas. Usa /selecttags para elegir tus intereses."
+            )
+
+        # Calculamos cuántas etiquetas coinciden en cada curso
+        scored = []
+        for course in db.query(Course).all():
+            course_tag_ids = {t.id for t in course.tags}
+            match_count = len(selected_tag_ids & course_tag_ids)
+            if match_count > 0:
+                scored.append((course, match_count))
+
+        if not scored:
+            return await update.message.reply_text(
+                "🔍 No encontramos optativas que coincidan con tus etiquetas."
+            )
+
+        # Ordenamos: primero mayor número de coincidencias, luego alfabético
+        scored.sort(key=lambda x: (-x[1], x[0].name))
+        top10 = [c for c, _ in scored[:10]]
+
+        # Construimos el texto de respuesta
+        lines = ["📚 *Los siguientes cursos optativos podrían interesarte:*"]
+        for i, course in enumerate(top10, start=1):
+            emoji = course.emoji or ""
+            lines.append(f"{i}. {emoji} {course.name} `/info_{course.id}`")
+
+        text = "\n".join(lines)
+    finally:
+        db.close()
+
+    await update.message.reply_text(text, parse_mode="Markdown")
